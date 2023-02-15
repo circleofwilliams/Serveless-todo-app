@@ -1,9 +1,9 @@
-import { TodoItem } from "../models/TodoItem";
-import { CreateTodoRequest } from "../requests/CreateTodoRequest";
-import { parseUserId } from "../auth/utils";
-import { UpdateTodoRequest } from "../requests/UpdateTodoRequest";
-import { TodoUpdate } from "../models/TodoUpdate";
-import { ToDoAccess } from "../dataLayer/todosAcess";
+import {TodoItem} from "../models/TodoItem";
+import {parseUserId} from "../auth/utils";
+import {CreateTodoRequest} from "../requests/CreateTodoRequest";
+import {UpdateTodoRequest} from "../requests/UpdateTodoRequest";
+import {TodoUpdate} from "../models/TodoUpdate";
+import {ToDoAccess} from "../dataLayer/todosAcess";
 
 import * as uuid from 'uuid'
 const toDoAccess = new ToDoAccess();
@@ -13,7 +13,7 @@ export async function getAllToDo(jwtToken: string): Promise<TodoItem[]> {
     return toDoAccess.getAllToDo(userId);
 }
 
-export function createTodo(createTodoRequest: CreateTodoRequest, jwtToken: string): Promise<TodoItem> {
+export function createToDo(createTodoRequest: CreateTodoRequest, jwtToken: string): Promise<TodoItem> {
     const userId = parseUserId(jwtToken);
     const todoId =  uuid.v4();
     const s3BucketName = process.env.S3_BUCKET_NAME;
