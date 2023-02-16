@@ -3,7 +3,7 @@ import {parseUserId} from "../auth/utils";
 import {CreateTodoRequest} from "../requests/CreateTodoRequest";
 import {UpdateTodoRequest} from "../requests/UpdateTodoRequest";
 import {TodoUpdate} from "../models/TodoUpdate";
-import {ToDoAccess} from "../dataLayer/todosAcess";
+import {ToDoAccess} from "../dataLayer/ToDoAccess";
 
 import * as uuid from 'uuid'
 const toDoAccess = new ToDoAccess();
