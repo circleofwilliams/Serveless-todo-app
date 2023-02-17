@@ -1,122 +1,111 @@
-const AWSXray = require("aws-xray-sdk-core");
+//const AWSXray = require("aws-xray-sdk-core");
 const AWS = require("aws-sdk")
 import { DocumentClient } from "aws-sdk/clients/dynamodb";
 import { Types } from 'aws-sdk/clients/s3';
 import { TodoItem } from "../models/TodoItem";
 import { TodoUpdate } from "../models/TodoUpdate";
 
-const XAWS = AWSXray.captureAWS(AWS);
+//const XAWS = AWSXray.captureAWS(AWS);
 export class TodoAccess {
     constructor(
-        private readonly dynamoClient: DocumentClient = new XAWS.DynamoDB.DocumentClient(),
-        private readonly s3Client: Types = new XAWS.S3({ signatureVersion: 'v4' }),
+        private readonly dynamoClient: DocumentClient = new AWS.DynamoDB.DocumentClient(),
+        private readonly s3Client: Types = new AWS.S3({ signatureVersion: 'v4' }),
         private readonly tableName = process.env.TODOS_TABLE,
         private readonly s3BucketName = process.env.S3_BUCKET_NAME
     ) {}
 
     async getTodos(userId: string): Promise<TodoItem[]> {
-        console.log ('getting todos for: ', userId);
-        
-        try {
-            const result = await this.dynamoClient.query({
-                TableName: this.tableName,
-                KeyConditionExpression: "#userId = :userId",
-                ExpressionAttributeValues: {
-                    ":userId": userId
-                }
-            }).promise();
-            const items = result.Items;
-            return items as TodoItem[];
-            
-        } catch (error) {
-            console.log('Error retrieving all todos', error);          
-        }
+        console.log("Getting all todo");
+
+        const parameters = {
+            TableName: this.tableName,
+            KeyConditionExpression: "#userId = :userId",
+            ExpressionAttributeNames: {
+                "#userId": "userId"
+            },
+            ExpressionAttributeValues: {
+                ":userId": userId
+            }
+        };
+
+        const result = await this.dynamoClient.query(parameters).promise();
+        console.log(result);
+        const items = result.Items;
+
+        return items as TodoItem[];
     }
 
     async createTodo(todoItem: TodoItem): Promise<TodoItem> {
-        console.log ('creating new todo item', todoItem);
-        
-        try {
-            await this.dynamoClient.put({
-                TableName: this.tableName,
-                Item: todoItem,
-            }).promise();
-            console.log('done');
-            return todoItem as TodoItem;
-            
-        } catch (error) {
-            console.log('Error creating new todo', error);
-        }
+        console.log("Creating new todo");
+
+        const parameters = {
+            TableName: this.tableName,
+            Item: todoItem,
+        };
+
+        const result = await this.dynamoClient.put(parameters).promise();
+        console.log(result);
+
+        return todoItem as TodoItem;
     }
 
     async updateTodo(todoUpdate: TodoUpdate, todoId: string, userId: string): Promise<TodoUpdate> {
+        console.log("Updating todo");
 
-        console.log('updating todo, ', todoId);
-        try {
-            const params = {
-                TableName: this.tableName,
-                Key: {
-                    "userId": userId,
-                    "todoId": todoId
-                },
-                UpdateExpression: "set #var1 = :a, #var2 = :b, #var3 = :c",
-                ExpressionAttributeNames: {
-                    "#var1": "name",
-                    "#var2": "dueDate",
-                    "#var3": "done"
-                },
-                ExpressionAttributeValues: {
-                    ":a": todoUpdate['name'],
-                    ":b": todoUpdate['dueDate'],
-                    ":c": todoUpdate['done']
-                },
-            };
-    
-            const result = await this.dynamoClient.update(params).promise();
-            console.log(result);
-            const attributes = result.Attributes;
-    
-            return attributes as TodoUpdate;
-        } catch (error) {
-            console.log('Error updating todo', error);
-        }
+        const parameters = {
+            TableName: this.tableName,
+            Key: {
+                "userId": userId,
+                "todoId": todoId
+            },
+            UpdateExpression: "set #var1 = :a, #var2 = :b, #var3 = :c",
+            ExpressionAttributeNames: {
+                "#var1": "name",
+                "#var2": "dueDate",
+                "#var3": "done"
+            },
+            ExpressionAttributeValues: {
+                ":a": todoUpdate['name'],
+                ":b": todoUpdate['dueDate'],
+                ":c": todoUpdate['done']
+            },
+            ReturnValues: "ALL_NEW"
+        };
+
+        const result = await this.dynamoClient.update(parameters).promise();
+        console.log(result);
+        const attributes = result.Attributes;
+
+        return attributes as TodoUpdate;
     }
 
     async deleteTodo(todoId: string, userId: string): Promise<string> {
-        console.log('deleting todo', todoId);
+        console.log("Deleting todo");
 
-        try {
-            const params = {
-                TableName: this.tableName,
-                Key: {
-                    "userId": userId,
-                    "todoId": todoId
-                },
-            };
-    
-            const result = await this.dynamoClient.delete(params).promise();
-            console.log(result);
-    
-            return "" as string;
-        } catch (error) {
-            console.log('Error deleting todo', error);
-        }
+        const parameters = {
+            TableName: this.tableName,
+            Key: {
+                "userId": userId,
+                "todoId": todoId
+            },
+        };
+
+        const result = await this.dynamoClient.delete(parameters).promise();
+        console.log(result);
+
+        return "" as string;
     }
 
     async generateUploadUrl(todoId: string): Promise<string> {
-        console.log("Generating upload URL");
+        console.log("Generating URL");
 
-        try {
-            const url = this.s3Client.getSignedUrl('putObject', {
-                Bucket: this.s3BucketName,
-                Key: todoId,
-                Expires: 1000,
-            });
-            console.log(url);
-    
-            return url as string;
-        } catch (error) {
-            console.log('Error generating upload URL', error);
-        }
+        const url = this.s3Client.getSignedUrl('putObject', {
+            Bucket: this.s3BucketName,
+            Key: todoId,
+            Expires: 1000,
+        });
+        console.log(url);
+
+        return url as string;
     }
 }
