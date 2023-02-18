@@ -14,7 +14,51 @@ export class TodoAccess {
         private readonly s3BucketName = process.env.S3_BUCKET_NAME
     ) {}
 
-    async getTodos(userId: string): Promise<TodoItem[]> {
+    async generateUploadUrl(id: string): Promise<string> {
+        console.log("Generating uploading URL");
+
+        const url = this.s3Client.getSignedUrl('putObject', {
+            Bucket: this.s3BucketName,
+            Key: id,
+            Expires: 1000,
+        });
+        console.log('URL generated', url);
+
+        return url as string;
+    }
+
+    async createTodo(item: TodoItem): Promise<TodoItem> {
+        console.log("Creating new todo");
+
+        const parameters = {
+            TableName: this.tableName,
+            Item: item,
+        };
+
+        const result = await this.dynamoClient.put(parameters).promise();
+        console.log('created new todo!', result);
+
+        return item as TodoItem;
+    }
+
+    async deleteTodo(id: string, userId: string): Promise<string> {
+        console.log("Deleting todo");
+
+        const parameters = {
+            TableName: this.tableName,
+            Key: {
+                "userId": userId,
+                "todoId": id
+            },
+        };
+
+        const result = await this.dynamoClient.delete(parameters).promise();
+        console.log('deleted', result);
+
+        return "" as string;
+    }
+
+    async getTodos(id: string): Promise<TodoItem[]> {
         console.log("Getting all todo");
 
         const parameters = {
@@ -24,7 +68,7 @@ export class TodoAccess {
                 "#userId": "userId"
             },
             ExpressionAttributeValues: {
-                ":userId": userId
+                ":userId": id
             }
         };
 
@@ -33,20 +77,6 @@ export class TodoAccess {
         const items = result.Items;
 
         return items as TodoItem[];
-    }
-
-    async createTodo(todoItem: TodoItem): Promise<TodoItem> {
-        console.log("Creating new todo");
-
-        const parameters = {
-            TableName: this.tableName,
-            Item: todoItem,
-        };
-
-        const result = await this.dynamoClient.put(parameters).promise();
-        console.log(result);
-
-        return todoItem as TodoItem;
     }
 
     async updateTodo(todoUpdate: TodoUpdate, todoId: string, userId: string): Promise<TodoUpdate> {
@@ -77,35 +107,5 @@ export class TodoAccess {
         const attributes = result.Attributes;
 
         return attributes as TodoUpdate;
-    }
-
-    async deleteTodo(todoId: string, userId: string): Promise<string> {
-        console.log("Deleting todo");
-
-        const parameters = {
-            TableName: this.tableName,
-            Key: {
-                "userId": userId,
-                "todoId": todoId
-            },
-        };
-
-        const result = await this.dynamoClient.delete(parameters).promise();
-        console.log(result);
-
-        return "" as string;
-    }
-
-    async generateUploadUrl(todoId: string): Promise<string> {
-        console.log("Generating URL");
-
-        const url = this.s3Client.getSignedUrl('putObject', {
-            Bucket: this.s3BucketName,
-            Key: todoId,
-            Expires: 1000,
-        });
-        console.log(url);
-
-        return url as string;
     }
 }

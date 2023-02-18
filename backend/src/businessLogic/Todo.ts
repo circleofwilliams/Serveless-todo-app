@@ -17,15 +17,15 @@ export function createTodo(createTodoRequest: CreateTodoRequest, jwtToken: strin
     const userId = parseUserId(jwtToken);
     const todoId =  uuid.v4();
     const s3BucketName = process.env.S3_BUCKET_NAME;
-    
-    return todoAccess.createTodo({
+    const item = {
         userId: userId,
         todoId: todoId,
         attachmentUrl:  `https://${s3BucketName}.s3.amazonaws.com/${todoId}`, 
         createdAt: new Date().toISOString(),
         done: false,
         ...createTodoRequest,
-    });
+    };
+    return todoAccess.createTodo(item);
 }
 
 export function updateTodo(updateTodoRequest: UpdateTodoRequest, todoId: string, jwtToken: string): Promise<TodoUpdate> {
