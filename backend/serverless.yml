@@ -24,15 +24,6 @@ provider:
     PROJECT_NAME: udacity
     TODOS_TABLE: serverless-todo-images-4-${self:provider.stage}
     S3_BUCKET_NAME: udacity-project4-serverless-todo-images-${self:provider.stage}
-	
-  iam:
-    role:
-      statements:
-        - Effect: Allow
-          Action:
-            - xray:PutTelemetryRecords
-            - xray:PutTraceSegments
-          Resource: "*"
 
 custom:
   documentation:
